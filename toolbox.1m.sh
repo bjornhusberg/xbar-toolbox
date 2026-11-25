@@ -13,6 +13,7 @@ CONFIG_DIR="$HOME/xbar-toolbox"
 CACHE_DIR="$CONFIG_DIR/cache"
 CACHE_TTL=900        # composite icon: 15 minutes
 COPILOT_TTL=600      # copilot data: 10 minutes
+COPILOT_ICON_MIN_PCT=25  # show the toolbar donut from this daily usage percentage
 AUDIO_DEVICE_TTL=30  # audio device name: 30 seconds
 COPILOT_PCT_CACHE="$CACHE_DIR/copilot_pct"
 COPILOT_STATS_CACHE="$CACHE_DIR/copilot_stats.txt"
@@ -157,14 +158,11 @@ get_copilot_data() {
     first_line=$(echo "$output" | head -1)
     if [[ "$first_line" == percentage=* ]]; then
       percentage="${first_line#percentage=}"
+      # The toolbar donut is only drawn from COPILOT_ICON_MIN_PCT usage; the stats rows always show.
+      awk -v p="$percentage" -v min="$COPILOT_ICON_MIN_PCT" 'BEGIN { exit !(p + 0 >= min) }' || percentage=""
       echo "$percentage" > "${COPILOT_PCT_CACHE}.tmp" \
         && mv "${COPILOT_PCT_CACHE}.tmp" "$COPILOT_PCT_CACHE"
       echo "$output" | tail -n +3 \
-        > "${COPILOT_STATS_CACHE}.tmp" \
-        && mv "${COPILOT_STATS_CACHE}.tmp" "$COPILOT_STATS_CACHE"
-    elif [ -n "$output" ]; then
-      printf '' > "$COPILOT_PCT_CACHE"
-      echo "$output" \
         > "${COPILOT_STATS_CACHE}.tmp" \
         && mv "${COPILOT_STATS_CACHE}.tmp" "$COPILOT_STATS_CACHE"
     else
