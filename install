@@ -1,0 +1,28 @@
+#!/bin/bash
+# Hard links the toolbox files from this repo to where xbar and the plugin expect them.
+# Safe to re-run; run it again after anything replaces a file (e.g. git checkout or pull).
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+PLUGIN_DIR="$HOME/Library/Application Support/xbar/plugins"
+CONFIG_DIR="$HOME/.config/xbar-toolbox"
+
+link() {
+  local src="$1" dest="$2"
+  mkdir -p "$(dirname "$dest")"
+  if [ -e "$dest" ] && [ "$dest" -ef "$src" ]; then
+    echo "ok       $dest"
+    return
+  fi
+  if [ -e "$dest" ] && ! cmp -s "$src" "$dest"; then
+    mv "$dest" "$dest.bak"
+    echo "backup   $dest.bak"
+  fi
+  ln -f "$src" "$dest"
+  echo "linked   $dest"
+}
+
+chmod +x toolbox.1m.sh render-icon
+link toolbox.1m.sh "$PLUGIN_DIR/toolbox.1m.sh"
+link render-icon "$CONFIG_DIR/render-icon"
