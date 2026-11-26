@@ -175,7 +175,7 @@ get_copilot_data() {
       awk -v p="$percentage" -v min="$COPILOT_ICON_MIN_PCT" 'BEGIN { exit !(p + 0 >= min) }' || percentage=""
       echo "$percentage" > "${COPILOT_PCT_CACHE}.tmp" \
         && mv "${COPILOT_PCT_CACHE}.tmp" "$COPILOT_PCT_CACHE"
-      echo "$output" | tail -n +3 \
+      echo "$output" | tail -n +2 \
         > "${COPILOT_STATS_CACHE}.tmp" \
         && mv "${COPILOT_STATS_CACHE}.tmp" "$COPILOT_STATS_CACHE"
     else
@@ -375,12 +375,7 @@ fi
 
 # Copilot AIC
 if $copilot_stats_active; then
-  echo "Copilot"
-  while IFS= read -r line; do
-    if [ "$line" = "---" ]; then echo "-----"
-    elif [ -n "$line" ]; then echo "--$line | refresh=true"
-    fi
-  done < "$COPILOT_STATS_CACHE"
+  cat "$COPILOT_STATS_CACHE"
 fi
 
 echo "---"
