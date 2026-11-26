@@ -306,7 +306,8 @@ fi
 hide_all=false
 [ -f "$HIDE_FLAG" ] && hide_all=true
 if $hide_all; then
-  icon_b64=$(get_icon false none connected none "" false none)
+  # Only the battery survives (in place of the gear); with no battery icon this renders the gear.
+  icon_b64=$(get_icon false "$battery_state" connected none "" false none)
 else
   icon_b64=$(get_icon "$amph_active" "$battery_state" "$wifi_state" "$audio_state" "$copilot_pct" "$notif_active" "$teams_badge")
 fi
