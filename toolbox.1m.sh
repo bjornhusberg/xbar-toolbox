@@ -11,7 +11,7 @@ KEYMAP="$HOME/bin/keymap"
 COPILOT="$HOME/bin/copilot-aic"
 CONFIG_DIR="$HOME/.config/xbar-toolbox"
 CACHE_DIR="$CONFIG_DIR/cache"
-HIDE_FLAG="$CONFIG_DIR/.hide-all"  # present = toolbar shows only the gear
+HIDE_FLAG="$CONFIG_DIR/.hide-all"  # present = toolbar shows only the battery
 CACHE_TTL=900        # composite icon: 15 minutes
 COPILOT_TTL=600      # copilot data: 10 minutes
 COPILOT_ICON_MIN_PCT=25  # show the toolbar donut from this daily usage percentage
@@ -86,15 +86,18 @@ is_amphetamine_active() {
 # Returns "battery-{level}" or "none"
 get_battery_state() {
   pmout=$(pmset -g batt 2>/dev/null)
-  if echo "$pmout" | grep -q "'Battery Power'"; then
-    battery_percent=$(echo "$pmout" | grep -Eo '[0-9]+%' | head -1 | tr -d '%')
-    if [ "$battery_percent" -lt 75 ]; then
-      level=$(( (battery_percent + 5) / 10 * 10 ))
-      echo "battery-$level"
-      return
-    fi
+  battery_percent=$(echo "$pmout" | grep -Eo '[0-9]+%' | head -1 | tr -d '%')
+  if [ -z "$battery_percent" ]; then
+    echo "none"  # no battery (desktop Mac)
+    return
   fi
-  echo "none"
+  level=$(( (battery_percent + 5) / 10 * 10 ))
+  # Plugged in counts as charging, including when full or holding at a limit.
+  if echo "$pmout" | grep -q "'AC Power'"; then
+    echo "charging-$level"
+  else
+    echo "battery-$level"
+  fi
 }
 
 # Returns "hotspot", "disconnected", or "connected"
@@ -236,7 +239,7 @@ get_teams_state() {
 get_icon() {
   local amph_active="$1" battery_state="$2" wifi_state="$3" \
         audio_state="$4" copilot_pct="$5" notif_active="$6" teams_badge="$7"
-  local cache_key="gear"
+  local cache_key="bar"
 
   [ "$teams_badge"  != "none"         ] && cache_key="${cache_key}-teams-${teams_badge}"
   [ "$notif_active"  = "true"         ] && cache_key="${cache_key}-notif"
@@ -311,7 +314,7 @@ fi
 hide_all=false
 [ -f "$HIDE_FLAG" ] && hide_all=true
 if $hide_all; then
-  # Only the battery survives (in place of the gear); with no battery icon this renders the gear.
+  # Only the battery icon survives.
   icon_b64=$(get_icon false "$battery_state" connected none "" false none)
 else
   icon_b64=$(get_icon "$amph_active" "$battery_state" "$wifi_state" "$audio_state" "$copilot_pct" "$notif_active" "$teams_badge")
@@ -416,7 +419,7 @@ else
   echo "Low power mode | bash='$0' param1=run param2=lowpower param3=1 terminal=false refresh=true"
 fi
 
-# Hide all toolbar icons except the gear
+# Hide all toolbar icons except the battery
 if $hide_all; then
   echo "Hide all ✓ | bash='$0' param1=run param2=hide terminal=false refresh=true"
 else
