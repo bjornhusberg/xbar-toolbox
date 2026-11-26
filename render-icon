@@ -27,14 +27,14 @@ let notifActive = $([[ "$notif_active" == "true" ]] && echo "true" || echo "fals
 let teamsState = "$teams_state"
 let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
 let iconColor = isDark ? NSColor.white : NSColor.black
-let wifiColor = NSColor(red: 144/255, green: 152/255, blue: 158/255, alpha: 1.0)
+let disabledColor = NSColor(red: 144/255, green: 152/255, blue: 158/255, alpha: 0.8)
+let wifiColor = disabledColor
 
 // Base icons are SF Symbols, drawn on first use and kept in the cache folder as icon-<name>.b64.
 let symbolSpecs: [String: (symbol: String, pointSize: CGFloat)] = [
     "gear": ("gearshape", 15),
     "awake": ("eye.fill", 16),
-    "teams": ("person.fill", 15),
-    "teams-unread": ("person.bubble.fill", 14),
+    "teams": ("person.bubble.fill", 14),
     "wifi": ("wifi", 14),
     "hotspot": ("personalhotspot", 13),
     "audio-speaker": ("speaker.wave.2.fill", 13),
@@ -140,8 +140,11 @@ var teamsW = 0
 let teamsAway = teamsState.contains("away")
 let teamsUnread = teamsState.contains("unread")
 if teamsAway || teamsUnread {
-    teams = loadIcon(teamsUnread ? "teams-unread" : "teams")
-    teamsW = (teams?.pixelsWide ?? 0) + (teamsAway ? 10 : 0)  // room for the away badge
+    teams = loadIcon("teams")
+    if teamsAway {
+        recolor(teams, to: disabledColor)
+    }
+    teamsW = (teams?.pixelsWide ?? 0) + (teamsUnread ? 10 : 0)  // room for the unread badge
 }
 
 let batteryW = (batteryState != "none") ? 51 : 0
@@ -278,8 +281,7 @@ if let github = github, githubW > 0 {
 
 if let teams = teams, teamsW > 0 {
     if xPos > 0 { xPos += gap }
-    // Unread messages use the bubble icon; amber badge when away/busy.
-    drawBadgedIcon(teams, at: xPos, badge: teamsAway ? amberBadge : nil)
+    drawBadgedIcon(teams, at: xPos, badge: teamsUnread ? amberBadge : nil)
     xPos += teamsW
 }
 
