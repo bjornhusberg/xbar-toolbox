@@ -225,7 +225,7 @@ get_teams_state() {
   last=$(tail -n 1 "$log" | cut -c1-19)
   logged=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${line:0:19}" +%s 2>/dev/null) || return
   last=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$last" +%s 2>/dev/null) || return
-  [ $(( last - logged )) -lt 600 ] || return
+  [ $(( last - logged )) -lt 1200 ] || return
   local state
   state=$(echo "$line" | sed -nE 's/^[^{]*\{ availability: ([A-Za-z]+), unread notification count: ([0-9]+) \}.*/\1\t\2/p')
   # Teams reports PresenceUnknown until it has signed in; that says nothing about the user's state.
