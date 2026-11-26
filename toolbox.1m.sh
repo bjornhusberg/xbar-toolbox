@@ -356,13 +356,17 @@ fi
 
 # Teams info row
 if [ -n "$teams_availability" ]; then
-  output=$(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g')
-  if [ "$output" = "Available" ]; then
+  status=$(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g')
+  if [ "$status" = "Available" ]; then
     if [ "$teams_unread" -gt "0" ]; then
       echo "Teams ($teams_unread unread) | bash='$0' param1=run param2=teams terminal=false refresh=true"
     fi
   else
-    echo "Teams ($teams_unread unread) - $(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g') | bash='$0' param1=run param2=teams terminal=false refresh=true"
+    if [ "$teams_unread" -gt "0" ]; then
+      echo "Teams ($teams_unread unread) - $status | bash='$0' param1=run param2=teams terminal=false refresh=true"
+    else
+      echo "Teams - $status | bash='$0' param1=run param2=teams terminal=false refresh=true"
+    fi
   fi
 fi
 
