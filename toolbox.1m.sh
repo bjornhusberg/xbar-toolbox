@@ -59,6 +59,9 @@ SWIFT
       else
         osascript -e 'tell application "Amphetamine" to start new session'
       fi ;;
+    ghclear)
+      # Marks every notification on host $2 as read, then empties the local list so the icon goes away.
+      GH_HOST="$2" gh api --method PUT notifications >/dev/null && : > "$NOTIF_CACHE" ;;
     teams) osascript -e 'tell application id "com.microsoft.teams2" to activate' ;;
     hide)
       if [ -f "$HIDE_FLAG" ]; then rm -f "$HIDE_FLAG"; else : > "$HIDE_FLAG"; fi ;;
@@ -344,6 +347,7 @@ if $notif_active; then
     fi
   done < "$NOTIF_CACHE"
   echo "--Open all | href=https://$NOTIF_HOST/notifications"
+  echo "--Clear all | bash='$0' param1=run param2=ghclear param3=$NOTIF_HOST terminal=false refresh=true"
   echo "---"
 fi
 
