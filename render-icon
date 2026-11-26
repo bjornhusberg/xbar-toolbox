@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generates the composite toolbar icon and prints base64 PNG to stdout.
-# Usage: render-icon <amph_active> <battery_state> <wifi_state> <audio_state> <copilot_pct> [notif] [teams: none|away|unread|awayunread]
+# Usage: render-icon <amph_active> <battery_state> <wifi_state> <audio_state> <copilot_pct> [github] [teams: none|away|unread|awayunread]
 # copilot_pct: daily Copilot usage percentage; the donut is drawn when > 0.
 
 CONFIG_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -11,7 +11,7 @@ battery_state="$2"
 wifi_state="$3"
 audio_state="$4"
 copilot_pct="${5:-0}"
-notif_active="$6"
+github_active="$6"
 teams_state="${7:-none}"
 
 swift - <<SWIFT 2>/dev/null
@@ -23,7 +23,7 @@ let batteryState = "$battery_state"
 let wifiState = "$wifi_state"
 let audioState = "$audio_state"
 let copilotPct: Double = $copilot_pct
-let notifActive = $([[ "$notif_active" == "true" ]] && echo "true" || echo "false")
+let githubActive = $([[ "$github_active" == "true" ]] && echo "true" || echo "false")
 let teamsState = "$teams_state"
 let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
 let iconColor = isDark ? NSColor.white : NSColor.black
@@ -130,7 +130,7 @@ let copilotW = copilotPct > 0 ? 36 : 0
 
 var github: NSBitmapImageRep? = nil
 var githubW = 0
-if notifActive {
+if githubActive {
     github = loadIcon("github")
     githubW = (github?.pixelsWide ?? 0) + 10  // room for the badge
 }
