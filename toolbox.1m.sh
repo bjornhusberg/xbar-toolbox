@@ -421,9 +421,9 @@ fi
 
 # Hide all toolbar icons except the battery
 if $hide_all; then
-  echo "Hide all ✓ | bash='$0' param1=run param2=hide terminal=false refresh=true"
+  echo "No icons ✓ | bash='$0' param1=run param2=hide terminal=false refresh=true"
 else
-  echo "Hide all | bash='$0' param1=run param2=hide terminal=false refresh=true"
+  echo "No icons | bash='$0' param1=run param2=hide terminal=false refresh=true"
 fi
 
 echo "---"
