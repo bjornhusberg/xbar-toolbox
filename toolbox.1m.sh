@@ -340,6 +340,7 @@ echo "---"
 # GitHub
 if $notif_active; then
   echo "GitHub ($(wc -l < "$NOTIF_CACHE" | tr -d ' ') unread)"
+  echo "--Inbox | href=https://$NOTIF_HOST/notifications"
   while IFS=$'\t' read -r title repo url; do
     [ -n "$title" ] || continue
     title=${title//|/¦}
@@ -349,7 +350,7 @@ if $notif_active; then
       echo "--${repo##*/}: ${title:0:60} | href=https://$NOTIF_HOST/notifications"
     fi
   done < "$NOTIF_CACHE"
-  echo "--Notifications | href=https://$NOTIF_HOST/notifications"
+  echo "-- ---"
   echo "--Clear all | bash='$0' param1=run param2=ghclear param3=$NOTIF_HOST terminal=false refresh=true"
   echo "---"
 fi
@@ -359,13 +360,13 @@ if [ -n "$teams_availability" ]; then
   status=$(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g')
   if [ "$status" = "Available" ]; then
     if [ "$teams_unread" -gt "0" ]; then
-      echo "Teams ($teams_unread unread) | bash='$0' param1=run param2=teams terminal=false refresh=true"
+      echo "Teams ($teams_unread unread) | bash='$0' param1=run param2=teams terminal=false"
     fi
   else
     if [ "$teams_unread" -gt "0" ]; then
-      echo "Teams ($teams_unread unread) - $status | bash='$0' param1=run param2=teams terminal=false refresh=true"
+      echo "Teams ($teams_unread unread) - $status | bash='$0' param1=run param2=teams terminal=false"
     else
-      echo "Teams - $status | bash='$0' param1=run param2=teams terminal=false refresh=true"
+      echo "Teams - $status | bash='$0' param1=run param2=teams terminal=false"
     fi
   fi
 fi
