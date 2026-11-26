@@ -63,10 +63,10 @@ SWIFT
       # Marks every notification on host $2 as read, then empties the local list so the icon goes away.
       GH_HOST="$2" gh api --method PUT notifications >/dev/null && : > "$NOTIF_CACHE" ;;
     teams)
-      # AppleScript needs the Automation permission for xbar; fall back to plain open without it.
+      # `open -a` needs no Automation permission (AppleScript does, per account); `open -b` does not raise it.
       # Failures are kept in $CACHE_DIR/action.log, since click actions otherwise discard their output.
-      osascript -e 'tell application id "com.microsoft.teams2" to activate' 2>>"$CACHE_DIR/action.log" \
-        || open -b com.microsoft.teams2 2>>"$CACHE_DIR/action.log" ;;
+      open -a "Microsoft Teams" 2>>"$CACHE_DIR/action.log" \
+        || osascript -e 'tell application id "com.microsoft.teams2" to activate' 2>>"$CACHE_DIR/action.log" ;;
     hide)
       if [ -f "$HIDE_FLAG" ]; then rm -f "$HIDE_FLAG"; else : > "$HIDE_FLAG"; fi ;;
   esac >/dev/null 2>&1
