@@ -108,7 +108,7 @@ get_wifi_state() {
   fi
 }
 
-# Prints the current audio output device class: speaker | airpods | headphones
+# Prints the current audio output device class: speaker | headphones
 detect_audio_device() {
   local device
   device=$(swift - <<'SWIFT' 2>/dev/null
@@ -124,13 +124,12 @@ print(ref?.takeRetainedValue() as String? ?? "")
 SWIFT
 )
   case "$device" in
-    *AirPod*) echo "airpods" ;;
     *MacBook*|*Built*in*|*Speaker*|"") echo "speaker" ;;
     *) echo "headphones" ;;
   esac
 }
 
-# Returns "none" (muted), "speaker", "airpods", or "headphones".
+# Returns "none" (muted), "speaker" or "headphones".
 # Muted check is always live. Device name uses stale-while-revalidate (TTL 30s).
 get_audio_state() {
   if [ "$(osascript -e 'output muted of (get volume settings)' 2>/dev/null)" = "true" ]; then
@@ -340,7 +339,7 @@ echo "---"
 
 # GitHub
 if $notif_active; then
-  echo "GitHub ($(wc -l < "$NOTIF_CACHE" | tr -d ' '))"
+  echo "GitHub ($(wc -l < "$NOTIF_CACHE" | tr -d ' ') unread)"
   while IFS=$'\t' read -r title repo url; do
     [ -n "$title" ] || continue
     title=${title//|/¦}
@@ -350,7 +349,7 @@ if $notif_active; then
       echo "--${repo##*/}: ${title:0:60} | href=https://$NOTIF_HOST/notifications"
     fi
   done < "$NOTIF_CACHE"
-  echo "--Open all | href=https://$NOTIF_HOST/notifications"
+  echo "--Notifications | href=https://$NOTIF_HOST/notifications"
   echo "--Clear all | bash='$0' param1=run param2=ghclear param3=$NOTIF_HOST terminal=false refresh=true"
   echo "---"
 fi
@@ -360,10 +359,10 @@ if [ -n "$teams_availability" ]; then
   output=$(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g')
   if [ "$output" = "Available" ]; then
     if [ "$teams_unread" -gt "0" ]; then
-      echo "Teams ($teams_unread) | bash='$0' param1=run param2=teams terminal=false refresh=true"
+      echo "Teams ($teams_unread unread) | bash='$0' param1=run param2=teams terminal=false refresh=true"
     fi
   else
-    echo "Teams ($teams_unread) - $(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g') | bash='$0' param1=run param2=teams terminal=false refresh=true"
+    echo "Teams ($teams_unread unread) - $(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g') | bash='$0' param1=run param2=teams terminal=false refresh=true"
   fi
 fi
 

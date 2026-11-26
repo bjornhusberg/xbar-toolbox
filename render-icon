@@ -39,7 +39,6 @@ let symbolSpecs: [String: (symbol: String, pointSize: CGFloat)] = [
     "hotspot": ("personalhotspot", 13),
     "audio-speaker": ("speaker.wave.2.fill", 13),
     "audio-headphones": ("headphones", 13),
-    "audio-airpods": ("airpodspro", 13),
 ]
 
 // Brand logos are not SF Symbols, so they are drawn from SVG (size in points).
@@ -273,7 +272,7 @@ func drawBadgedIcon(_ icon: NSBitmapImageRep, at x: Int, badge: (fill: NSColor, 
 
 if let github = github, githubW > 0 {
     if xPos > 0 { xPos += gap }
-    drawBadgedIcon(github, at: xPos, badge: redBadge)
+    drawBadgedIcon(github, at: xPos, badge: amberBadge)
     xPos += githubW
 }
 
