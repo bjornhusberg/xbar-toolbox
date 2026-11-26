@@ -59,6 +59,7 @@ SWIFT
       else
         osascript -e 'tell application "Amphetamine" to start new session'
       fi ;;
+    teams) osascript -e 'tell application id "com.microsoft.teams2" to activate' ;;
     hide)
       if [ -f "$HIDE_FLAG" ]; then rm -f "$HIDE_FLAG"; else : > "$HIDE_FLAG"; fi ;;
   esac >/dev/null 2>&1
@@ -206,7 +207,7 @@ get_teams_state() {
   local logdir="$HOME/Library/Group Containers/UBF8T346G9.com.microsoft.teams/Library/Application Support/Logs"
   local log line
   while IFS= read -r log; do
-    line=$(tail -c 300000 "$log" 2>/dev/null | grep "BroadcastGlobalState" | tail -1)
+    line=$(tail -c 300000 "$log" 2>/dev/null | grep -a "BroadcastGlobalState.*unread notification count" | tail -1)
     [ -n "$line" ] && break
   done < <(ls -t "$logdir"/MSTeams_*.log 2>/dev/null | head -2)
   [ -n "$line" ] || return
@@ -219,7 +220,11 @@ get_teams_state() {
   logged=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${line:0:19}" +%s 2>/dev/null) || return
   last=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$last" +%s 2>/dev/null) || return
   [ $(( last - logged )) -lt 600 ] || return
-  echo "$line" | sed -nE 's/^[^{]*\{ availability: ([A-Za-z]+), unread notification count: ([0-9]+) \}.*/\1\t\2/p'
+  local state
+  state=$(echo "$line" | sed -nE 's/^[^{]*\{ availability: ([A-Za-z]+), unread notification count: ([0-9]+) \}.*/\1\t\2/p')
+  # Teams reports PresenceUnknown until it has signed in; that says nothing about the user's state.
+  case "$state" in PresenceUnknown*) return ;; esac
+  echo "$state"
 }
 
 # Returns composite icon as base64. Uses stale-while-revalidate (TTL 15 min).
@@ -346,10 +351,10 @@ if [ -n "$teams_availability" ]; then
   output=$(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g')
   if [ "$output" = "Available" ]; then
     if [ "$teams_unread" -gt "0" ]; then
-      echo "Teams ($teams_unread) | refresh=true"
+      echo "Teams ($teams_unread) | bash='$0' param1=run param2=teams terminal=false refresh=true"
     fi
   else
-    echo "Teams ($teams_unread) - $(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g') | refresh=true"
+    echo "Teams ($teams_unread) - $(echo "$teams_availability" | sed -E 's/([a-z])([A-Z])/\1 \2/g') | bash='$0' param1=run param2=teams terminal=false refresh=true"
   fi
 fi
 
