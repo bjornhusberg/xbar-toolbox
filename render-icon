@@ -141,9 +141,6 @@ let teamsAway = teamsState.contains("away")
 let teamsUnread = teamsState.contains("unread")
 if teamsAway || teamsUnread {
     teams = loadIcon("teams")
-    if teamsAway {
-        recolor(teams, to: disabledColor)
-    }
     teamsW = (teams?.pixelsWide ?? 0) + (teamsUnread ? 10 : 0)  // room for the unread badge
 }
 
@@ -263,8 +260,8 @@ let amberBadge = (fill: NSColor(red: 240/255, green: 170/255, blue: 20/255, alph
                   border: NSColor(red: 140/255, green: 90/255, blue: 0, alpha: 1))
 
 // Draws a recolored icon at x with a badge on its top-right corner.
-func drawBadgedIcon(_ icon: NSBitmapImageRep, at x: Int, badge: (fill: NSColor, border: NSColor)?) {
-    recolor(icon, to: iconColor)
+func drawBadgedIcon(_ icon: NSBitmapImageRep, at x: Int, tint: NSColor? = nil, badge: (fill: NSColor, border: NSColor)?) {
+    recolor(icon, to: tint ?? iconColor)
     let y = (gearH - icon.pixelsHigh) / 2
     icon.draw(in: NSRect(x: x, y: y, width: icon.pixelsWide, height: icon.pixelsHigh))
     guard let badge = badge else { return }
@@ -281,7 +278,7 @@ if let github = github, githubW > 0 {
 
 if let teams = teams, teamsW > 0 {
     if xPos > 0 { xPos += gap }
-    drawBadgedIcon(teams, at: xPos, badge: teamsUnread ? amberBadge : nil)
+    drawBadgedIcon(teams, at: xPos, tint: teamsAway ? disabledColor : nil, badge: teamsUnread ? amberBadge : nil)
     xPos += teamsW
 }
 
