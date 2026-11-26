@@ -11,6 +11,7 @@ KEYMAP="$HOME/bin/keymap"
 COPILOT="$HOME/bin/copilot-aic"
 CONFIG_DIR="$HOME/xbar-toolbox"
 CACHE_DIR="$CONFIG_DIR/cache"
+HIDE_FLAG="$CONFIG_DIR/.hide-all"  # present = toolbar shows only the gear
 CACHE_TTL=900        # composite icon: 15 minutes
 COPILOT_TTL=600      # copilot data: 10 minutes
 COPILOT_ICON_MIN_PCT=25  # show the toolbar donut from this daily usage percentage
@@ -58,6 +59,8 @@ SWIFT
       else
         osascript -e 'tell application "Amphetamine" to start new session'
       fi ;;
+    hide)
+      if [ -f "$HIDE_FLAG" ]; then rm -f "$HIDE_FLAG"; else : > "$HIDE_FLAG"; fi ;;
   esac >/dev/null 2>&1
   exit 0
 fi
@@ -222,10 +225,10 @@ get_teams_state() {
 # Returns composite icon as base64. Uses stale-while-revalidate (TTL 15 min).
 get_icon() {
   local amph_active="$1" battery_state="$2" wifi_state="$3" \
-        audio_state="$4" copilot_pct="$5" notif_active="$6" away_active="$7"
+        audio_state="$4" copilot_pct="$5" notif_active="$6" teams_badge="$7"
   local cache_key="gear"
 
-  [ "$away_active"   = "true"         ] && cache_key="${cache_key}-away"
+  [ "$teams_badge"  != "none"         ] && cache_key="${cache_key}-teams-${teams_badge}"
   [ "$notif_active"  = "true"         ] && cache_key="${cache_key}-notif"
   [ "$amph_active"   = "true"         ] && cache_key="${cache_key}-coffee"
   [ "$wifi_state"    = "disconnected" ] && cache_key="${cache_key}-wifi"
@@ -247,14 +250,14 @@ get_icon() {
     # Stale: serve immediately, regenerate in background
     cat "$cache_file"
     ("$CONFIG_DIR/render-icon" "$amph_active" "$battery_state" "$wifi_state" \
-        "$audio_state" "${copilot_pct:-0}" "$notif_active" "$away_active" \
+        "$audio_state" "${copilot_pct:-0}" "$notif_active" "$teams_badge" \
       > "${cache_file}.tmp" && mv "${cache_file}.tmp" "$cache_file") &
     disown $!
   else
     # First run: block until generated
     local icon_b64
     icon_b64=$("$CONFIG_DIR/render-icon" "$amph_active" "$battery_state" \
-                 "$wifi_state" "$audio_state" "${copilot_pct:-0}" "$notif_active" "$away_active")
+                 "$wifi_state" "$audio_state" "${copilot_pct:-0}" "$notif_active" "$teams_badge")
     if [ -n "$icon_b64" ]; then
       echo "$icon_b64" > "$cache_file"
       echo "$icon_b64"
@@ -285,15 +288,21 @@ notif_active=false
 
 teams_state=$(get_teams_state)
 IFS=$'\t' read -r teams_availability teams_unread <<< "$teams_state"
-away_active=false
+# Teams icon badge: red for unread messages, amber when away/busy, none otherwise.
+teams_badge=none
 case "$teams_availability" in
   ""|Available|AvailableIdle) ;;
-  *) away_active=true ;;
+  *) teams_badge=away ;;
 esac
-# A red GitHub badge takes priority over the amber Teams one.
-$notif_active && away_active=false
+[ "${teams_unread:-0}" -gt 0 ] && teams_badge=unread
 
-icon_b64=$(get_icon "$amph_active" "$battery_state" "$wifi_state" "$audio_state" "$copilot_pct" "$notif_active" "$away_active")
+hide_all=false
+[ -f "$HIDE_FLAG" ] && hide_all=true
+if $hide_all; then
+  icon_b64=$(get_icon false none connected none "" false none)
+else
+  icon_b64=$(get_icon "$amph_active" "$battery_state" "$wifi_state" "$audio_state" "$copilot_pct" "$notif_active" "$teams_badge")
+fi
 echo "| image=$icon_b64"
 
 echo "---"
@@ -386,6 +395,13 @@ if pmset -g | grep -Eq 'lowpowermode[[:space:]]+1'; then
   echo "Low power mode ✓ | bash='$0' param1=run param2=lowpower param3=0 terminal=false refresh=true"
 else
   echo "Low power mode | bash='$0' param1=run param2=lowpower param3=1 terminal=false refresh=true"
+fi
+
+# Hide all toolbar icons except the gear
+if $hide_all; then
+  echo "Hide all ✓ | bash='$0' param1=run param2=hide terminal=false refresh=true"
+else
+  echo "Hide all | bash='$0' param1=run param2=hide terminal=false refresh=true"
 fi
 
 echo "---"
