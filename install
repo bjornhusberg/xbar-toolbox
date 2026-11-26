@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 
 PLUGIN_DIR="$HOME/Library/Application Support/xbar/plugins"
 CONFIG_DIR="$HOME/.config/xbar-toolbox"
+BACKUP_DIR="$CONFIG_DIR/backup"
 
 link() {
   local src="$1" dest="$2"
@@ -17,8 +18,11 @@ link() {
     return
   fi
   if [ -e "$dest" ] && ! cmp -s "$src" "$dest"; then
-    mv "$dest" "$dest.bak"
-    echo "backup   $dest.bak"
+    # Never next to the plugin: xbar would pick a backup up as a plugin of its own.
+    local bak="$BACKUP_DIR/$(basename "$dest").$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$BACKUP_DIR"
+    mv "$dest" "$bak"
+    echo "backup   $bak"
   fi
   ln -f "$src" "$dest"
   echo "linked   $dest"

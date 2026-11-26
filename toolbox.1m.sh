@@ -314,7 +314,7 @@ fi
 hide_all=false
 [ -f "$HIDE_FLAG" ] && hide_all=true
 if $hide_all; then
-  # Only the battery icon survives.
+  # Only the battery survives (render-icon shows it regardless when nothing else is showing).
   icon_b64=$(get_icon false "$battery_state" connected none "" false none)
 else
   icon_b64=$(get_icon "$amph_active" "$battery_state" "$wifi_state" "$audio_state" "$copilot_pct" "$notif_active" "$teams_badge")

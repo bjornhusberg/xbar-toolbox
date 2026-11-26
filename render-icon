@@ -142,7 +142,11 @@ if teamsAway || teamsUnread {
     teamsW = (teams?.pixelsWide ?? 0) + (teamsUnread ? 10 : 0)  // room for the unread badge
 }
 
-let batteryW = (batteryState != "none") ? 51 : 0
+// The battery only shows below 75% on battery power, or when nothing else is showing.
+let batteryLevel = Int(batteryState.split(separator: "-").last ?? "0") ?? 0
+let lowOnBattery = batteryState.hasPrefix("battery-") && batteryLevel < 75
+let otherIcons = awakeW > 0 || wifiW > 0 || audioW > 0 || copilotW > 0 || githubW > 0 || teamsW > 0
+let batteryW = (batteryState != "none" && (lowOnBattery || !otherIcons)) ? 51 : 0
 let gap = 32
 var totalW = 0
 func addW(_ w: Int) { if w > 0 { totalW += (totalW > 0 ? gap : 0) + w } }
@@ -170,9 +174,8 @@ func drawBadge(_ rect: NSRect, fill: NSColor, border: NSColor) {
 
 var xPos = 0
 
-if batteryState != "none" {
-    if xPos > 0 { xPos += gap }
-    let level = Int(batteryState.split(separator: "-").last ?? "0") ?? 0
+if batteryW > 0 {
+    let level = batteryLevel
     let charging = batteryState.hasPrefix("charging")
     let batH = 24, by = (canvasH - batH) / 2
     iconColor.setStroke(); iconColor.setFill()
