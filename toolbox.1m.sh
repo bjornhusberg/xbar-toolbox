@@ -288,13 +288,15 @@ notif_active=false
 
 teams_state=$(get_teams_state)
 IFS=$'\t' read -r teams_availability teams_unread <<< "$teams_state"
-# Teams icon badge: red for unread messages, amber when away/busy, none otherwise.
+# Teams icon state: none | away (amber badge) | unread (bubble icon) | awayunread (both).
 teams_badge=none
 case "$teams_availability" in
   ""|Available|AvailableIdle) ;;
   *) teams_badge=away ;;
 esac
-[ "${teams_unread:-0}" -gt 0 ] && teams_badge=unread
+if [ "${teams_unread:-0}" -gt 0 ]; then
+  if [ "$teams_badge" = away ]; then teams_badge=awayunread; else teams_badge=unread; fi
+fi
 
 hide_all=false
 [ -f "$HIDE_FLAG" ] && hide_all=true

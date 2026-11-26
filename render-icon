@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generates the composite toolbar icon and prints base64 PNG to stdout.
-# Usage: render-icon <amph_active> <battery_state> <wifi_state> <audio_state> <copilot_pct> [notif] [teams: none|away|unread]
+# Usage: render-icon <amph_active> <battery_state> <wifi_state> <audio_state> <copilot_pct> [notif] [teams: none|away|unread|awayunread]
 # copilot_pct: daily Copilot usage percentage; the donut is drawn when > 0.
 
 CONFIG_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -34,7 +34,7 @@ let symbolSpecs: [String: (symbol: String, pointSize: CGFloat)] = [
     "gear": ("gearshape", 15),
     "awake": ("eye.fill", 16),
     "teams": ("person.fill", 15),
-    "github": ("message.fill", 15),
+    "teams-unread": ("person.bubble.fill", 14),
     "wifi": ("wifi", 14),
     "hotspot": ("personalhotspot", 13),
     "audio-speaker": ("speaker.wave.2.fill", 13),
@@ -42,11 +42,23 @@ let symbolSpecs: [String: (symbol: String, pointSize: CGFloat)] = [
     "audio-airpods": ("airpodspro", 13),
 ]
 
+// Brand logos are not SF Symbols, so they are drawn from SVG (size in points).
+let svgIcons: [String: (svg: String, size: Int)] = [
+    "github": (#"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="black" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>"#, 17),
+]
+
 func drawSymbol(_ name: String) -> Data {
-    let spec = symbolSpecs[name]!
-    let cfg = NSImage.SymbolConfiguration(pointSize: spec.pointSize, weight: .regular)
-    let img = NSImage(systemSymbolName: spec.symbol, accessibilityDescription: nil)!.withSymbolConfiguration(cfg)!
-    let w = Int(ceil(img.size.width)), h = Int(ceil(img.size.height))
+    let img: NSImage
+    let w: Int, h: Int
+    if let logo = svgIcons[name] {
+        img = NSImage(data: Data(logo.svg.utf8))!
+        w = logo.size; h = logo.size
+    } else {
+        let spec = symbolSpecs[name]!
+        let cfg = NSImage.SymbolConfiguration(pointSize: spec.pointSize, weight: .regular)
+        img = NSImage(systemSymbolName: spec.symbol, accessibilityDescription: nil)!.withSymbolConfiguration(cfg)!
+        w = Int(ceil(img.size.width)); h = Int(ceil(img.size.height))
+    }
     let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: w * 2, pixelsHigh: h * 2, bitsPerSample: 8,
                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
                                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
@@ -126,9 +138,11 @@ if notifActive {
 
 var teams: NSBitmapImageRep? = nil
 var teamsW = 0
-if teamsState == "away" || teamsState == "unread" {
-    teams = loadIcon("teams")
-    teamsW = (teams?.pixelsWide ?? 0) + 10  // room for the badge
+let teamsAway = teamsState.contains("away")
+let teamsUnread = teamsState.contains("unread")
+if teamsAway || teamsUnread {
+    teams = loadIcon(teamsUnread ? "teams-unread" : "teams")
+    teamsW = (teams?.pixelsWide ?? 0) + (teamsAway ? 10 : 0)  // room for the away badge
 }
 
 let batteryW = (batteryState != "none") ? 51 : 0
@@ -247,10 +261,11 @@ let amberBadge = (fill: NSColor(red: 240/255, green: 170/255, blue: 20/255, alph
                   border: NSColor(red: 140/255, green: 90/255, blue: 0, alpha: 1))
 
 // Draws a recolored icon at x with a badge on its top-right corner.
-func drawBadgedIcon(_ icon: NSBitmapImageRep, at x: Int, badge: (fill: NSColor, border: NSColor)) {
+func drawBadgedIcon(_ icon: NSBitmapImageRep, at x: Int, badge: (fill: NSColor, border: NSColor)?) {
     recolor(icon, to: iconColor)
     let y = (gearH - icon.pixelsHigh) / 2
     icon.draw(in: NSRect(x: x, y: y, width: icon.pixelsWide, height: icon.pixelsHigh))
+    guard let badge = badge else { return }
     let r = 8.0
     drawBadge(NSRect(x: Double(x + icon.pixelsWide) - 6, y: Double(gearH) - 2 * r - 1, width: 2 * r, height: 2 * r),
               fill: badge.fill, border: badge.border)
@@ -264,8 +279,8 @@ if let github = github, githubW > 0 {
 
 if let teams = teams, teamsW > 0 {
     if xPos > 0 { xPos += gap }
-    // Red: unread messages. Amber: away/busy.
-    drawBadgedIcon(teams, at: xPos, badge: teamsState == "unread" ? redBadge : amberBadge)
+    // Unread messages use the bubble icon; amber badge when away/busy.
+    drawBadgedIcon(teams, at: xPos, badge: teamsAway ? amberBadge : nil)
     xPos += teamsW
 }
 
