@@ -62,7 +62,11 @@ SWIFT
     ghclear)
       # Marks every notification on host $2 as read, then empties the local list so the icon goes away.
       GH_HOST="$2" gh api --method PUT notifications >/dev/null && : > "$NOTIF_CACHE" ;;
-    teams) osascript -e 'tell application id "com.microsoft.teams2" to activate' ;;
+    teams)
+      # AppleScript needs the Automation permission for xbar; fall back to plain open without it.
+      # Failures are kept in $CACHE_DIR/action.log, since click actions otherwise discard their output.
+      osascript -e 'tell application id "com.microsoft.teams2" to activate' 2>>"$CACHE_DIR/action.log" \
+        || open -b com.microsoft.teams2 2>>"$CACHE_DIR/action.log" ;;
     hide)
       if [ -f "$HIDE_FLAG" ]; then rm -f "$HIDE_FLAG"; else : > "$HIDE_FLAG"; fi ;;
   esac >/dev/null 2>&1
@@ -72,7 +76,7 @@ fi
 # --- State detection --------------------------------------------------------
 
 is_amphetamine_active() {
-  if pgrep -x Amphetamine >/dev/null 2>/dev/null; then
+  if pgrep -x -u "$(id -u)" Amphetamine >/dev/null 2>/dev/null; then
     [ "$(osascript -e 'tell application "Amphetamine" to session is active' 2>/dev/null)" = "true" ]
     return $?
   fi
@@ -206,7 +210,7 @@ get_notifications() {
 # Prints "<availability><TAB><unread count>" for the signed-in Teams account, or nothing.
 # Read from the latest Teams log, where the first account entry is the main one.
 get_teams_state() {
-  pgrep -x MSTeams >/dev/null 2>&1 || return
+  pgrep -x -u "$(id -u)" MSTeams >/dev/null 2>&1 || return
   local logdir="$HOME/Library/Group Containers/UBF8T346G9.com.microsoft.teams/Library/Application Support/Logs"
   local log line
   while IFS= read -r log; do
@@ -277,7 +281,7 @@ get_icon() {
 
 amph_running=false
 amph_active=false
-if pgrep -x Amphetamine >/dev/null; then
+if pgrep -x -u "$(id -u)" Amphetamine >/dev/null; then
   amph_running=true
   is_amphetamine_active && amph_active=true
 fi
