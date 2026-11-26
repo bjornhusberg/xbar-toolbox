@@ -208,12 +208,13 @@ get_notifications() {
 
 # Prints "<availability><TAB><unread count>" for the signed-in Teams account, or nothing.
 # Read from the latest Teams log, where the first account entry is the main one.
+# Teams reports PresenceUnknown that should be ignored ([^P])
 get_teams_state() {
   pgrep -x -u "$(id -u)" MSTeams >/dev/null 2>&1 || return
   local logdir="$HOME/Library/Group Containers/UBF8T346G9.com.microsoft.teams/Library/Application Support/Logs"
   local log line
   while IFS= read -r log; do
-    line=$(tail -c 300000 "$log" 2>/dev/null | grep -a "BroadcastGlobalState.*unread notification count" | tail -1)
+    line=$(tail -c 300000 "$log" 2>/dev/null | grep -a "BroadcastGlobalState.*availability: [^P].*unread notification count" | tail -1)
     [ -n "$line" ] && break
   done < <(ls -t "$logdir"/MSTeams_*.log 2>/dev/null | head -2)
   [ -n "$line" ] || return
@@ -225,11 +226,9 @@ get_teams_state() {
   last=$(tail -n 1 "$log" | cut -c1-19)
   logged=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${line:0:19}" +%s 2>/dev/null) || return
   last=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$last" +%s 2>/dev/null) || return
-  [ $(( last - logged )) -lt 1200 ] || return
+  [ $(( last - logged )) -lt 600 ] || return
   local state
-  state=$(echo "$line" | sed -nE 's/^[^{]*\{ availability: ([A-Za-z]+), unread notification count: ([0-9]+) \}.*/\1\t\2/p')
-  # Teams reports PresenceUnknown until it has signed in; that says nothing about the user's state.
-  case "$state" in PresenceUnknown*) return ;; esac
+  state=$(echo "$line" | sed -nE 's/^[^{]*\{ availability: ([^P][A-Za-z]+), unread notification count: ([0-9]+) \}.*/\1\t\2/p')
   echo "$state"
 }
 
