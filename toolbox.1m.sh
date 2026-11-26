@@ -9,7 +9,7 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 SIDETONE="$HOME/bin/sidetone"
 KEYMAP="$HOME/bin/keymap"
 COPILOT="$HOME/bin/copilot-aic"
-CONFIG_DIR="$HOME/xbar-toolbox"
+CONFIG_DIR="$HOME/.config/xbar-toolbox"
 CACHE_DIR="$CONFIG_DIR/cache"
 HIDE_FLAG="$CONFIG_DIR/.hide-all"  # present = toolbar shows only the gear
 CACHE_TTL=900        # composite icon: 15 minutes

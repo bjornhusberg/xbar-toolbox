@@ -1,5 +1,6 @@
 #!/bin/bash
 # Hard links the toolbox files from this repo to where xbar and the plugin expect them.
+# Also wipes the generated cache (icons, Copilot and notification data) so nothing stale survives an upgrade.
 # Safe to re-run; run it again after anything replaces a file (e.g. git checkout or pull).
 
 set -euo pipefail
@@ -26,3 +27,6 @@ link() {
 chmod +x toolbox.1m.sh render-icon
 link toolbox.1m.sh "$PLUGIN_DIR/toolbox.1m.sh"
 link render-icon "$CONFIG_DIR/render-icon"
+
+rm -rf "$CONFIG_DIR/cache"
+echo "cleared  $CONFIG_DIR/cache"
