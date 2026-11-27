@@ -5,6 +5,7 @@
 
 CONFIG_DIR="$(cd "$(dirname "$0")" && pwd)"
 CACHE_DIR="$CONFIG_DIR/cache"
+LOGS_DIR="$CONFIG_DIR/logs"
 
 amph_active="$1"
 battery_state="$2"
@@ -14,7 +15,9 @@ copilot_pct="${5:-0}"
 github_active="$6"
 teams_state="${7:-none}"
 
-swift - <<SWIFT 2>/dev/null
+mkdir -p "$LOGS_DIR"
+
+swift - <<SWIFT 2>"$LOGS_DIR/render-icon-error.log"
 import AppKit
 
 let cacheDir = "$CACHE_DIR"
